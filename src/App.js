@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "./App.scss";
 import * as data from "./data.json";
@@ -23,10 +23,12 @@ const inPairs = (arr, func) => {
 
 class QuoteGen {
   constructor() {
+    this.kerberoi = new RegExp(`\\b${data.kerberoi.join("\\b|\\b")}\\b`, "gi");
     this.quotes = data.quotes.flatMap(({ term, quotes }) =>
-      quotes.map((quote) => ({ term, quote }))
+      quotes
+        .filter((quote) => quote.search(this.kerberoi) !== -1)
+        .map((quote) => ({ term, quote }))
     );
-    this.kerberoi = new RegExp(data.kerberoi.join("|"), "g");
   }
 
   choices(answers) {
@@ -45,12 +47,13 @@ class QuoteGen {
   get(i) {
     const { term, quote } = this.quotes[i];
     const matches = Array.from(quote.matchAll(this.kerberoi));
-    const answers = matches.map((match) => match[0]);
+    const answers = matches.map((match) => match[0].toLowerCase());
     const bounds = matches.flatMap((match) => [
       match.index,
       match.index + match[0].length,
     ]);
     const bits = pairwise(bounds, (cur, next) => quote.slice(cur, next));
+    console.log(quote, bits);
     return { term, choices: this.choices(answers), bits };
   }
 }
@@ -75,7 +78,7 @@ const Blank = ({ answer, content, id }) => (
     {(provided, snapshot) => (
       <span
         className={`blank ${
-          !content ? "" : answer === content ? "correct" : "wrong"
+          !content ? "" : answer.toLowerCase() === content ? "correct" : "wrong"
         }`}
         ref={provided.innerRef}
       >
@@ -182,12 +185,14 @@ const Question = (props) => {
 };
 
 const App = () => {
-  const qg = new QuoteGen();
+  const qg = useRef(null);
+  if (!qg.current) qg.current = new QuoteGen();
+
   const [quoteN, setQuoteN] = useState(0);
-  const [quote, setQuote] = useState(qg.get(quoteN));
+  const [quote, setQuote] = useState(qg.current.get(quoteN));
 
   const next = () => {
-    setQuote(qg.get(quoteN + 1));
+    setQuote(qg.current.get(quoteN + 1));
     setQuoteN(quoteN + 1);
   };
 
