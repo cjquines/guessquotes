@@ -11,6 +11,7 @@ def read(file):
 # get list of kerberoi
 kerberoi = []
 paren = re.compile(r"\(\S+\)")
+# for line in read("sample_kerbs.txt"):
 for line in read("kerbs.txt"):
     if m := paren.search(line):
         kerberoi.append(m.group()[1:-1])
@@ -30,6 +31,7 @@ def push_quotes():
     quotes = []
 
 
+# for line in read("sample_quoteboard.txt"):
 for line in read("quoteboard.txt"):
     if m := header.match(line):
         term_, year = m.groups()

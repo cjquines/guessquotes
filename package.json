@@ -2,6 +2,7 @@
   "name": "guessquotes",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://esp.scripts.mit.edu:444/guessquotes/",
   "dependencies": {
     "node-sass": "^4.14.1",
     "react": "^17.0.1",
