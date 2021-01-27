@@ -35,9 +35,13 @@
 
 .quote {
   display: grid;
-  grid-template-columns: 5rem 30rem;
-  gap: 1rem 0;
+  grid-template-columns: 7rem 28rem;
+  gap: 1rem 0.5rem;
   min-height: 5rem;
+
+  .speaker {
+    text-align: right;
+  }
 
   .saying span {
     vertical-align: text-bottom;

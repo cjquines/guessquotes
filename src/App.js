@@ -46,7 +46,7 @@ class QuoteGen {
 
   kerbify(s) {
     const matches = Array.from(s.matchAll(this.kerberoi));
-    const answers = matches.map((match) => match[0].toLowerCase());
+    const kerbs = matches.map((match) => match[0].toLowerCase());
     const bounds = matches.flatMap((match) => [
       match.index,
       match.index + match[0].length,
@@ -64,14 +64,25 @@ class QuoteGen {
         content: s.slice(cur, next),
       })
     );
-    return bits;
+    console.log(s, kerbs, bits)
+    return { kerbs, bits };
   }
 
   get(i) {
     const { term, quote } = this.quotes[i];
-    const matches = Array.from(quote.matchAll(this.kerberoi));
-    const answers = matches.map((match) => match[0].toLowerCase());
-    return { term, choices: this.choices(answers), bits: this.kerbify(quote) };
+    const matches = Array.from(quote.matchAll(/[^")*\]]+:/g));
+    const bounds = matches.flatMap((match) => [
+      match.index,
+      match.index + match[0].length,
+    ]);
+    let answers = [];
+    let pieces = [];
+    pairwise(bounds, (cur, next) => {
+      const { kerbs, bits } = this.kerbify(quote.slice(cur, next));
+      answers.push(...kerbs);
+      pieces.push(bits);
+    });
+    return { term, choices: this.choices(answers), pieces };
   }
 }
 
@@ -106,30 +117,25 @@ const Blank = ({ answer, content, id }) => (
   </Droppable>
 );
 
-const Quote = ({ bits, blanks }) => {
-  let elts = [];
-  let saying = [];
-  const pushSaying = () => {
-    elts.push(
-      <div className="saying" key={`saying-${elts.length}`}>
-        {saying}
-      </div>
-    );
-    saying = [];
-  };
-  bits.forEach(({ type, content }, i) => {
-    if (type === "rest") saying.push(<span key={`rest-${i}`}>{content}</span>);
-    else
-      saying.push(
+const Quote = ({ blanks, pieces }) => {
+  const renderBit = (bit) =>
+    bit.map(({ type, content }, i) =>
+      type === "rest" ? (
+        <span key={`rest-${i}`}>{content}</span>
+      ) : (
         <Blank
           answer={content}
           content={blanks[`blank-${i}`]?.[0]}
           id={`blank-${i}`}
           key={`blank-${i}`}
         />
-      );
+      )
+    );
+  let elts = [];
+  inPairs(pieces, (speaker, saying, i) => {
+    elts.push(<div className="speaker">{renderBit(speaker)}</div>);
+    elts.push(<div className="saying">{renderBit(saying)}</div>);
   });
-  pushSaying();
   return <div className="quote">{elts}</div>;
 };
 
@@ -186,7 +192,7 @@ const Question = (props) => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <Quote bits={props.bits} blanks={blanks} />
+      <Quote blanks={blanks} pieces={props.pieces} />
       <Choices choices={choices} />
     </DragDropContext>
   );
