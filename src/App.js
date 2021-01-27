@@ -3,6 +3,8 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "./App.scss";
 import * as data from "./data.json";
 
+const ADDITIONAL_CHOICES = 3;
+
 const pairwise = (arr, func) => {
   let res = [];
   for (let i = 0; i < arr.length; i++) {
@@ -27,6 +29,19 @@ class QuoteGen {
     this.kerberoi = new RegExp(data.kerberoi.join("|"), "g");
   }
 
+  choices(answers) {
+    let res = [...answers];
+    const choice = () =>
+      data.kerberoi[Math.floor(Math.random() * data.kerberoi.length)];
+    for (let i = 0; i < ADDITIONAL_CHOICES; i++) {
+      let ch = undefined;
+      while (!ch || res.includes(ch)) ch = choice();
+      res.push(ch);
+    }
+    res.sort();
+    return res;
+  }
+
   get(i) {
     const { term, quote } = this.quotes[i];
     const matches = Array.from(quote.matchAll(this.kerberoi));
@@ -36,7 +51,7 @@ class QuoteGen {
       match.index + match[0].length,
     ]);
     const bits = pairwise(bounds, (cur, next) => quote.slice(cur, next));
-    return { term, answers, bits };
+    return { term, choices: this.choices(answers), bits };
   }
 }
 
@@ -56,7 +71,7 @@ const Kerb = ({ kerb, index }) => (
 );
 
 const Blank = ({ answer, content, id }) => (
-  <Droppable droppableId={id} direction="horizontal">
+  <Droppable droppableId={id}>
     {(provided, snapshot) => (
       <span
         className={`blank ${
@@ -65,7 +80,7 @@ const Blank = ({ answer, content, id }) => (
         ref={provided.innerRef}
       >
         {content && <Kerb kerb={content} index={0} />}
-        {provided.placeholder}
+        <span style={{ display: "none" }}>{provided.placeholder}</span>
       </span>
     )}
   </Droppable>
@@ -124,9 +139,9 @@ const Choices = ({ choices }) => {
 
 const App = () => {
   const qg = new QuoteGen();
-  const quote = qg.get(21);
+  const quote = qg.get(19);
   const [blanks, setBlanks] = useState({});
-  const [choices, setChoices] = useState(quote.answers);
+  const [choices, setChoices] = useState(quote.choices);
 
   const getList = (id) => (id === "choices" ? choices : blanks[id]) ?? [];
 
