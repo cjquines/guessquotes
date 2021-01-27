@@ -125,16 +125,16 @@ const Blank = ({ answer, content, id, revealed }) => {
 };
 
 const Quote = ({ blanks, pieces, revealed }) => {
-  const renderBit = (bit) =>
-    bit.map(({ type, content }, i) =>
+  const renderBit = (bit, i) =>
+    bit.map(({ type, content }, j) =>
       type === "rest" ? (
-        <span key={`rest-${i}`}>{content}</span>
+        <span key={`rest-${i}-${j}`}>{content}</span>
       ) : (
         <Blank
           answer={content}
-          content={blanks[`blank-${i}`]?.[0]}
-          id={`blank-${i}`}
-          key={`blank-${i}`}
+          content={blanks[`blank-${i}-${j}`]?.[0]}
+          id={`blank-${i}-${j}`}
+          key={`blank-${i}-${j}`}
           revealed={revealed}
         />
       )
@@ -143,7 +143,7 @@ const Quote = ({ blanks, pieces, revealed }) => {
     <div className="quote">
       {pieces.map((bit, i) => (
         <div className={i % 2 === 0 ? "speaker" : "saying"} key={i}>
-          {renderBit(bit)}
+          {renderBit(bit, i)}
         </div>
       ))}
     </div>
