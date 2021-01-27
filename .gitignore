@@ -24,3 +24,5 @@ yarn-error.log*
 
 data.json
 .eslintcache
+kerbs.txt
+quoteboard.txt
