@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "./App.scss";
 import * as data from "./data.json";
 
-const ADDITIONAL_CHOICES = 3;
+const ADDITIONAL_CHOICES = 4;
 
 const pairwise = (arr, func) => {
   let res = [];
@@ -203,10 +203,10 @@ const Question = (props) => {
 
   const isDone =
     props.revealed ||
-    props.pieces.every((bit) =>
+    props.pieces.every((bit, i) =>
       bit.every(
-        ({ type, content }, i) =>
-          type === "rest" || blanks[`blank-${i}`]?.[0] === content
+        ({ type, content }, j) =>
+          type === "rest" || blanks[`blank-${i}-${j}`]?.[0] === content
       )
     );
 
