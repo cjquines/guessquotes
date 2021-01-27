@@ -13,6 +13,13 @@ const pairwise = (arr, func) => {
   return res;
 };
 
+const shuffle = (arr) => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+};
+
 class QuoteGen {
   constructor() {
     this.kerberoi = new RegExp(`\\b${data.kerberoi.join("\\b|\\b")}\\b`, "gi");
@@ -21,6 +28,7 @@ class QuoteGen {
         .filter((quote) => quote.search(this.kerberoi) !== -1)
         .map((quote) => ({ term, quote }))
     );
+    shuffle(this.quotes);
   }
 
   choices(answers) {
@@ -56,7 +64,6 @@ class QuoteGen {
         content: s.slice(cur, next),
       })
     );
-    console.log(s, kerbs, bits);
     return { kerbs, bits };
   }
 
@@ -99,7 +106,12 @@ const Blank = ({ answer, content, id, revealed }) => {
   return (
     <Droppable droppableId={id}>
       {(provided, snapshot) => (
-        <span className={`blank ${status} ${snapshot.isDraggingOver ? "active" : ""}`} ref={provided.innerRef}>
+        <span
+          className={`blank ${status} ${
+            snapshot.isDraggingOver ? "active" : ""
+          }`}
+          ref={provided.innerRef}
+        >
           {revealed ? (
             <Kerb kerb={answer.toLowerCase()} index={0} />
           ) : (
@@ -197,10 +209,6 @@ const Question = (props) => {
           type === "rest" || blanks[`blank-${i}`]?.[0] === content
       )
     );
-
-  console.log(
-    props.pieces.flatMap((bit) => bit.filter(({ type }) => type === "kerb"))
-  );
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>

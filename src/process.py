@@ -20,9 +20,16 @@ quotes_ = []
 term = None
 quotes = []
 header = re.compile(r"===\s?(.*?(\d+))\s?===")
-push_quotes = lambda: len(quotes) > 0 and quotes_.append(
-    {"term": term, "quotes": quotes}
-)
+
+
+def push_quotes():
+    global quotes
+    if len(quotes) == 0:
+        return
+    quotes_.append({"term": term, "quotes": quotes})
+    quotes = []
+
+
 for line in read("quoteboard.txt"):
     if m := header.match(line):
         term_, year = m.groups()
@@ -33,6 +40,7 @@ for line in read("quoteboard.txt"):
     if term and line.startswith("*"):
         quotes.append(line[1:].strip())
 push_quotes()
+print([len(quotes["quotes"]) for quotes in quotes_])
 
 with open("data.json", "w") as f:
     f.write(json.dumps({"quotes": quotes_, "kerberoi": kerberoi}))
