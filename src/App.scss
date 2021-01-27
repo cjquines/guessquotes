@@ -1,0 +1,30 @@
+.app {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.kerb {
+  background: #2222;
+  box-sizing: border-box;
+  display: inline-block;
+  padding: 0.1rem;
+  text-align: center;
+  width: 5rem;
+}
+
+.quote {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: 1rem 0;
+}
+
+.choices {
+  margin-top: 1rem;
+
+  .kerb {
+    margin: 0 0.5rem;
+  }
+}
