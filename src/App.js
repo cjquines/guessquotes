@@ -1,3 +1,5 @@
+import React, { useState } from "react";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "./App.scss";
 import * as data from "./data.json";
 
@@ -38,53 +40,110 @@ class QuoteGen {
   }
 }
 
-const Kerb = ({ choice, kerb, revealed }) => {
-  return <span className="kerb">{choice || revealed ? kerb : "?"}</span>;
-};
+const Kerb = ({ kerb, index }) => (
+  <Draggable key={kerb} draggableId={kerb} index={index}>
+    {(provided, snapshot) => (
+      <span
+        className="kerb"
+        ref={provided.innerRef}
+        {...provided.draggableProps}
+        {...provided.dragHandleProps}
+      >
+        {kerb}
+      </span>
+    )}
+  </Draggable>
+);
 
-const render = (bits) => {
-  let result = [];
+const Blank = ({ content, id }) => (
+  <Droppable droppableId={id}>
+    {(provided, snapshot) => (
+      <span className="blank" ref={provided.innerRef}>
+        {content && <Kerb kerb={content} index={0} />}
+        {provided.placeholder}
+      </span>
+    )}
+  </Droppable>
+);
+
+const Quote = ({ bits, blanks }) => {
+  let elts = [];
   let saying = [];
   const pushSaying = () => {
-    result.push(
-      <div className="saying" key={`saying-${result.length}`}>
+    elts.push(
+      <div className="saying" key={`saying-${elts.length}`}>
         {saying}
       </div>
     );
     saying = [];
   };
   inPairs(bits, (kerb, rest, i) => {
-    const wrapped = (
-      <Kerb id={`kerb-${i}`} key={`kerb-${i}`} kerb={kerb} revealed={false} />
+    const blank = (
+      <Blank
+        content={blanks[`blank-${i}`]?.[0]}
+        id={`blank-${i}`}
+        key={`blank-${i}`}
+      />
     );
     if (rest[0] === ":") {
       saying.length && pushSaying();
-      result.push(
+      elts.push(
         <div className="speaker" key={`speaker-${i}`}>
-          {wrapped}
+          {blank}
         </div>
       );
     } else {
-      saying.push(wrapped);
+      saying.push(blank);
     }
     saying.push(<span key={`rest-${i}`}>{rest}</span>);
   });
   pushSaying();
-  return result;
+  return <div className="quote">{elts}</div>;
 };
 
 const App = () => {
   const qg = new QuoteGen();
-  const x = qg.get(21);
+  const quote = qg.get(21);
+  const [blanks, setBlanks] = useState({});
+  const [choices, setChoices] = useState(quote.answers);
+
+  const getList = (id) => (id === "choices" ? choices : blanks[id]);
+
+  const updateList = (id, list) =>
+    id === "choices"
+      ? setChoices(list)
+      : setBlanks((blanks) => ({ ...blanks, [id]: list }));
+
+  const onDragEnd = ({ source, destination }) => {
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId) {
+      return;
+    } else {
+      const srcClone = Array.from(getList(source.droppableId));
+      const destClone = Array.from(getList(destination.droppableId) ?? []);
+      const [removed] = srcClone.splice(source.index, 1);
+      destClone.splice(destination.index, 0, removed);
+      console.log(srcClone, destClone);
+      updateList(source.droppableId, srcClone);
+      updateList(destination.droppableId, destClone);
+    }
+  };
 
   return (
     <div className="app">
-      <div className="quote">{render(x.bits)}</div>
-      <div className="choices">
-        {x.answers.map((a, i) => (
-          <Kerb choice={true} kerb={a} key={i} />
-        ))}
-      </div>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Quote bits={quote.bits} blanks={blanks} />
+        <Droppable droppableId="choices">
+          {(provided, snapshot) => (
+            <div className="choices" ref={provided.innerRef}>
+              {choices.map((a, i) => (
+                <Kerb kerb={a} key={i} index={i} />
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 };

@@ -9,22 +9,46 @@
 .kerb {
   background: #2222;
   box-sizing: border-box;
-  display: inline-block;
-  padding: 0.1rem;
+  display: block;
+  height: 1.3rem;
+  padding: 0.1rem 0;
   text-align: center;
   width: 5rem;
 }
 
+.blank {
+  background: #2222;
+  box-sizing: border-box;
+  display: inline-flex;
+  min-height: 1rem;
+  text-align: center;
+  width: 5rem;
+}
+
+.blank.correct {
+  background: #0f08;
+}
+
+.blank.wrong {
+  background: #f008;
+}
+
 .quote {
   display: grid;
-  grid-template-columns: 5rem 1fr;
+  grid-template-columns: 5rem 30rem;
   gap: 1rem 0;
+  min-height: 5rem;
+
+  .saying span {
+    vertical-align: text-bottom;
+  }
 }
 
 .choices {
+  background: #2222;
+  display: flex;
+  justify-content: center;
   margin-top: 1rem;
-
-  .kerb {
-    margin: 0 0.5rem;
-  }
+  min-height: 1.3rem;
+  width: 100%;
 }
