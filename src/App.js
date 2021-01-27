@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "./App.scss";
 import * as data from "./data.json";
@@ -106,7 +106,7 @@ const Quote = ({ bits, blanks }) => {
         key={`blank-${i}`}
       />
     );
-    if (rest[0] === ":") {
+    if (rest.includes(":")) {
       saying.length && pushSaying();
       elts.push(
         <div className="speaker" key={`speaker-${i}`}>
@@ -137,11 +137,14 @@ const Choices = ({ choices }) => {
   );
 };
 
-const App = () => {
-  const qg = new QuoteGen();
-  const quote = qg.get(19);
+const Question = (props) => {
   const [blanks, setBlanks] = useState({});
-  const [choices, setChoices] = useState(quote.choices);
+  const [choices, setChoices] = useState(props.choices);
+
+  useEffect(() => {
+    setChoices(props.choices);
+    setBlanks({});
+  }, [props]);
 
   const getList = (id) => (id === "choices" ? choices : blanks[id]) ?? [];
 
@@ -171,11 +174,27 @@ const App = () => {
   };
 
   return (
+    <DragDropContext onDragEnd={onDragEnd}>
+      <Quote bits={props.bits} blanks={blanks} />
+      <Choices choices={choices} />
+    </DragDropContext>
+  );
+};
+
+const App = () => {
+  const qg = new QuoteGen();
+  const [quoteN, setQuoteN] = useState(0);
+  const [quote, setQuote] = useState(qg.get(quoteN));
+
+  const next = () => {
+    setQuote(qg.get(quoteN + 1));
+    setQuoteN(quoteN + 1);
+  };
+
+  return (
     <div className="app">
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Quote bits={quote.bits} blanks={blanks} />
-        <Choices choices={choices} />
-      </DragDropContext>
+      <Question {...quote} />
+      <button onClick={(e) => next()}>new quote</button>
     </div>
   );
 };
