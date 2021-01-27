@@ -44,17 +44,34 @@ class QuoteGen {
     return res;
   }
 
-  get(i) {
-    const { term, quote } = this.quotes[i];
-    const matches = Array.from(quote.matchAll(this.kerberoi));
+  kerbify(s) {
+    const matches = Array.from(s.matchAll(this.kerberoi));
     const answers = matches.map((match) => match[0].toLowerCase());
     const bounds = matches.flatMap((match) => [
       match.index,
       match.index + match[0].length,
     ]);
-    const bits = pairwise(bounds, (cur, next) => quote.slice(cur, next));
-    console.log(quote, bits);
-    return { term, choices: this.choices(answers), bits };
+    let bits = [];
+    if (bounds[0] !== 0) {
+      bits.push({
+        type: "rest",
+        content: s.slice(0, bounds[0]),
+      });
+    }
+    pairwise(bounds, (cur, next, i) =>
+      bits.push({
+        type: i % 2 === 0 ? "kerb" : "rest",
+        content: s.slice(cur, next),
+      })
+    );
+    return bits;
+  }
+
+  get(i) {
+    const { term, quote } = this.quotes[i];
+    const matches = Array.from(quote.matchAll(this.kerberoi));
+    const answers = matches.map((match) => match[0].toLowerCase());
+    return { term, choices: this.choices(answers), bits: this.kerbify(quote) };
   }
 }
 
@@ -100,26 +117,17 @@ const Quote = ({ bits, blanks }) => {
     );
     saying = [];
   };
-  inPairs(bits, (kerb, rest, i) => {
-    const blank = (
-      <Blank
-        answer={kerb}
-        content={blanks[`blank-${i}`]?.[0]}
-        id={`blank-${i}`}
-        key={`blank-${i}`}
-      />
-    );
-    if (rest.includes(":")) {
-      saying.length && pushSaying();
-      elts.push(
-        <div className="speaker" key={`speaker-${i}`}>
-          {blank}
-        </div>
+  bits.forEach(({ type, content }, i) => {
+    if (type === "rest") saying.push(<span key={`rest-${i}`}>{content}</span>);
+    else
+      saying.push(
+        <Blank
+          answer={content}
+          content={blanks[`blank-${i}`]?.[0]}
+          id={`blank-${i}`}
+          key={`blank-${i}`}
+        />
       );
-    } else {
-      saying.push(blank);
-    }
-    saying.push(<span key={`rest-${i}`}>{rest}</span>);
   });
   pushSaying();
   return <div className="quote">{elts}</div>;
