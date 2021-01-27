@@ -55,10 +55,15 @@ const Kerb = ({ kerb, index }) => (
   </Draggable>
 );
 
-const Blank = ({ content, id }) => (
-  <Droppable droppableId={id}>
+const Blank = ({ answer, content, id }) => (
+  <Droppable droppableId={id} direction="horizontal">
     {(provided, snapshot) => (
-      <span className="blank" ref={provided.innerRef}>
+      <span
+        className={`blank ${
+          !content ? "" : answer === content ? "correct" : "wrong"
+        }`}
+        ref={provided.innerRef}
+      >
         {content && <Kerb kerb={content} index={0} />}
         {provided.placeholder}
       </span>
@@ -80,6 +85,7 @@ const Quote = ({ bits, blanks }) => {
   inPairs(bits, (kerb, rest, i) => {
     const blank = (
       <Blank
+        answer={kerb}
         content={blanks[`blank-${i}`]?.[0]}
         id={`blank-${i}`}
         key={`blank-${i}`}
@@ -101,31 +107,51 @@ const Quote = ({ bits, blanks }) => {
   return <div className="quote">{elts}</div>;
 };
 
+const Choices = ({ choices }) => {
+  return (
+    <Droppable droppableId="choices" direction="horizontal">
+      {(provided, snapshot) => (
+        <div className="choices" ref={provided.innerRef}>
+          {choices.map((kerb, i) => (
+            <Kerb kerb={kerb} key={i} index={i} />
+          ))}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
+  );
+};
+
 const App = () => {
   const qg = new QuoteGen();
   const quote = qg.get(21);
   const [blanks, setBlanks] = useState({});
   const [choices, setChoices] = useState(quote.answers);
 
-  const getList = (id) => (id === "choices" ? choices : blanks[id]);
+  const getList = (id) => (id === "choices" ? choices : blanks[id]) ?? [];
 
   const updateList = (id, list) =>
     id === "choices"
       ? setChoices(list)
       : setBlanks((blanks) => ({ ...blanks, [id]: list }));
 
-  const onDragEnd = ({ source, destination }) => {
-    if (!destination) return;
-    if (source.droppableId === destination.droppableId) {
-      return;
+  const onDragEnd = ({ source: src, destination: dest }) => {
+    if (!dest) return;
+    if (src.droppableId === dest.droppableId) {
+      const clone = Array.from(getList(src.droppableId));
+      const [removed] = clone.splice(src.index, 1);
+      clone.splice(dest.index, 0, removed);
+      updateList(src.droppableId, clone);
     } else {
-      const srcClone = Array.from(getList(source.droppableId));
-      const destClone = Array.from(getList(destination.droppableId) ?? []);
-      const [removed] = srcClone.splice(source.index, 1);
-      destClone.splice(destination.index, 0, removed);
-      console.log(srcClone, destClone);
-      updateList(source.droppableId, srcClone);
-      updateList(destination.droppableId, destClone);
+      const srcClone = Array.from(getList(src.droppableId));
+      const destClone = Array.from(getList(dest.droppableId));
+      const swap = dest.droppableId !== "choices" && destClone.length;
+      const [removed] = srcClone.splice(src.index, 1);
+      const [removed2] = swap ? destClone.splice(0, 1) : [];
+      destClone.splice(dest.index, 0, removed);
+      swap && srcClone.splice(0, 0, removed2);
+      updateList(src.droppableId, srcClone);
+      updateList(dest.droppableId, destClone);
     }
   };
 
@@ -133,16 +159,7 @@ const App = () => {
     <div className="app">
       <DragDropContext onDragEnd={onDragEnd}>
         <Quote bits={quote.bits} blanks={blanks} />
-        <Droppable droppableId="choices">
-          {(provided, snapshot) => (
-            <div className="choices" ref={provided.innerRef}>
-              {choices.map((a, i) => (
-                <Kerb kerb={a} key={i} index={i} />
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
+        <Choices choices={choices} />
       </DragDropContext>
     </div>
   );
