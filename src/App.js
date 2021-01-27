@@ -13,14 +13,6 @@ const pairwise = (arr, func) => {
   return res;
 };
 
-const inPairs = (arr, func) => {
-  let res = [];
-  for (let i = 0; i < arr.length; i += 2) {
-    res.push(func(arr[i], arr[i + 1], i / 2));
-  }
-  return res;
-};
-
 class QuoteGen {
   constructor() {
     this.kerberoi = new RegExp(`\\b${data.kerberoi.join("\\b|\\b")}\\b`, "gi");
@@ -64,13 +56,13 @@ class QuoteGen {
         content: s.slice(cur, next),
       })
     );
-    console.log(s, kerbs, bits)
+    console.log(s, kerbs, bits);
     return { kerbs, bits };
   }
 
   get(i) {
     const { term, quote } = this.quotes[i];
-    const matches = Array.from(quote.matchAll(/[^")*\]]+:/g));
+    const matches = Array.from(quote.matchAll(/[^"*]+:/g));
     const bounds = matches.flatMap((match) => [
       match.index,
       match.index + match[0].length,
@@ -131,12 +123,15 @@ const Quote = ({ blanks, pieces }) => {
         />
       )
     );
-  let elts = [];
-  inPairs(pieces, (speaker, saying, i) => {
-    elts.push(<div className="speaker">{renderBit(speaker)}</div>);
-    elts.push(<div className="saying">{renderBit(saying)}</div>);
-  });
-  return <div className="quote">{elts}</div>;
+  return (
+    <div className="quote">
+      {pieces.map((bit, i) => (
+        <div className={i % 2 === 0 ? "speaker" : "saying"} key={i}>
+          {renderBit(bit)}
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const Choices = ({ choices }) => {
@@ -192,7 +187,9 @@ const Question = (props) => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <Quote blanks={blanks} pieces={props.pieces} />
+      <div className="quote-wrapper">
+        <Quote blanks={blanks} pieces={props.pieces} />
+      </div>
       <Choices choices={choices} />
     </DragDropContext>
   );
