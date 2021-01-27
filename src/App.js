@@ -93,23 +93,26 @@ const Kerb = ({ kerb, index }) => (
   </Draggable>
 );
 
-const Blank = ({ answer, content, id }) => (
-  <Droppable droppableId={id}>
-    {(provided, snapshot) => (
-      <span
-        className={`blank ${
-          !content ? "" : answer.toLowerCase() === content ? "correct" : "wrong"
-        }`}
-        ref={provided.innerRef}
-      >
-        {content && <Kerb kerb={content} index={0} />}
-        <span style={{ display: "none" }}>{provided.placeholder}</span>
-      </span>
-    )}
-  </Droppable>
-);
+const Blank = ({ answer, content, id, revealed }) => {
+  const judgment = answer.toLowerCase() === content ? "correct" : "wrong";
+  const status = content ? judgment : revealed ? "wrong" : "";
+  return (
+    <Droppable droppableId={id}>
+      {(provided, snapshot) => (
+        <span className={`blank ${status} ${snapshot.isDraggingOver ? "active" : ""}`} ref={provided.innerRef}>
+          {revealed ? (
+            <Kerb kerb={answer.toLowerCase()} index={0} />
+          ) : (
+            content && <Kerb kerb={content} index={0} />
+          )}
+          <span style={{ display: "none" }}>{provided.placeholder}</span>
+        </span>
+      )}
+    </Droppable>
+  );
+};
 
-const Quote = ({ blanks, pieces }) => {
+const Quote = ({ blanks, pieces, revealed }) => {
   const renderBit = (bit) =>
     bit.map(({ type, content }, i) =>
       type === "rest" ? (
@@ -120,6 +123,7 @@ const Quote = ({ blanks, pieces }) => {
           content={blanks[`blank-${i}`]?.[0]}
           id={`blank-${i}`}
           key={`blank-${i}`}
+          revealed={revealed}
         />
       )
     );
@@ -156,7 +160,7 @@ const Question = (props) => {
   useEffect(() => {
     setChoices(props.choices);
     setBlanks({});
-  }, [props]);
+  }, [props.choices, props.pieces]);
 
   const getList = (id) => (id === "choices" ? choices : blanks[id]) ?? [];
 
@@ -185,10 +189,28 @@ const Question = (props) => {
     }
   };
 
+  const isDone =
+    props.revealed ||
+    props.pieces.every((bit) =>
+      bit.every(
+        ({ type, content }, i) =>
+          type === "rest" || blanks[`blank-${i}`]?.[0] === content
+      )
+    );
+
+  console.log(
+    props.pieces.flatMap((bit) => bit.filter(({ type }) => type === "kerb"))
+  );
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="quote-wrapper">
-        <Quote blanks={blanks} pieces={props.pieces} />
+        <Quote
+          blanks={blanks}
+          pieces={props.pieces}
+          revealed={props.revealed}
+        />
+        {isDone && <div className="info">from {props.term}</div>}
       </div>
       <Choices choices={choices} />
     </DragDropContext>
@@ -201,16 +223,21 @@ const App = () => {
 
   const [quoteN, setQuoteN] = useState(0);
   const [quote, setQuote] = useState(qg.current.get(quoteN));
+  const [revealed, setRevealed] = useState(false);
 
   const next = () => {
     setQuote(qg.current.get(quoteN + 1));
     setQuoteN(quoteN + 1);
+    setRevealed(false);
   };
 
   return (
     <div className="app">
-      <Question {...quote} />
-      <button onClick={(e) => next()}>new quote</button>
+      <Question {...quote} revealed={revealed} />
+      <div className="button-wrapper">
+        <button onClick={(e) => setRevealed(true)}>reveal</button>
+        <button onClick={(e) => next()}>new quote</button>
+      </div>
     </div>
   );
 };
