@@ -32,12 +32,14 @@ class QuoteGen {
   }
 
   choices(answers) {
-    let res = [...answers];
-    const choice = () =>
-      data.kerberoi[Math.floor(Math.random() * data.kerberoi.length)];
+    let res = answers.map((kerb, i) => ({ kerb, id: i }));
+    const choice = () => ({
+      kerb: data.kerberoi[Math.floor(Math.random() * data.kerberoi.length)],
+      id: res.length,
+    });
     for (let i = 0; i < ADDITIONAL_CHOICES; i++) {
       let ch = undefined;
-      while (!ch || res.includes(ch)) ch = choice();
+      while (!ch || res.find((it) => it?.kerb === ch?.kerb)) ch = choice();
       res.push(ch);
     }
     res.sort();
@@ -85,23 +87,25 @@ class QuoteGen {
   }
 }
 
-const Kerb = ({ kerb, index }) => (
-  <Draggable key={kerb} draggableId={kerb} index={index}>
-    {(provided, snapshot) => (
-      <span
-        className="kerb"
-        ref={provided.innerRef}
-        {...provided.draggableProps}
-        {...provided.dragHandleProps}
-      >
-        {kerb}
-      </span>
-    )}
-  </Draggable>
-);
+const Kerb = ({ kerb, id, index }) => {
+  return (
+    <Draggable key={kerb} draggableId={id.toString()} index={index}>
+      {(provided, snapshot) => (
+        <span
+          className="kerb"
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+        >
+          {kerb}
+        </span>
+      )}
+    </Draggable>
+  );
+};
 
 const Blank = ({ answer, content, id, revealed }) => {
-  const judgment = answer.toLowerCase() === content ? "correct" : "wrong";
+  const judgment = answer.toLowerCase() === content?.kerb ? "correct" : "wrong";
   const status = content ? judgment : revealed ? "wrong" : "";
   return (
     <Droppable droppableId={id}>
@@ -113,9 +117,9 @@ const Blank = ({ answer, content, id, revealed }) => {
           ref={provided.innerRef}
         >
           {revealed ? (
-            <Kerb kerb={answer.toLowerCase()} index={0} />
+            <Kerb kerb={answer.toLowerCase()} id={-1} index={0} />
           ) : (
-            content && <Kerb kerb={content} index={0} />
+            content && <Kerb kerb={content.kerb} id={content.id} index={0} />
           )}
           <span style={{ display: "none" }}>{provided.placeholder}</span>
         </span>
@@ -155,8 +159,8 @@ const Choices = ({ choices }) => {
     <Droppable droppableId="choices" direction="horizontal">
       {(provided, snapshot) => (
         <div className="choices" ref={provided.innerRef}>
-          {choices.map((kerb, i) => (
-            <Kerb kerb={kerb} key={i} index={i} />
+          {choices.map(({ kerb, id }, i) => (
+            <Kerb kerb={kerb} key={id} id={id} index={i} />
           ))}
           {provided.placeholder}
         </div>
@@ -206,7 +210,7 @@ const Question = (props) => {
     props.pieces.every((bit, i) =>
       bit.every(
         ({ type, content }, j) =>
-          type === "rest" || blanks[`blank-${i}-${j}`]?.[0] === content
+          type === "rest" || blanks[`blank-${i}-${j}`]?.[0]?.kerb === content
       )
     );
 

@@ -1,6 +1,6 @@
 import json, re
 
-MIN_YEAR = 2018
+MIN_YEAR = 2020
 
 
 def read(file):
