@@ -37,12 +37,8 @@ class QuoteGen {
       kerb: data.kerberoi[Math.floor(Math.random() * data.kerberoi.length)],
       id: res.length,
     });
-    for (let i = 0; i < ADDITIONAL_CHOICES; i++) {
-      let ch = undefined;
-      while (!ch || res.find((it) => it?.kerb === ch?.kerb)) ch = choice();
-      res.push(ch);
-    }
-    res.sort();
+    for (let i = 0; i < ADDITIONAL_CHOICES; i++) res.push(choice());
+    shuffle(res);
     return res;
   }
 
